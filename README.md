@@ -1,4 +1,4 @@
-# flowsense-quant
+# optimetricflow-signals
 
 Small Python library for turning structured multi-source signals (news, social, policy, etc.) into per-symbol factor rows and a single fused score, with an optional **market regime** hook (bull / bear / shock) that rescales factor-type weights before fusion.
 
