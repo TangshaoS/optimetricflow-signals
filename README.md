@@ -1,104 +1,111 @@
-# optimetricflow-signals
+# OptimetricFlow Signals 🚀
 
-Small Python library for turning structured multi-source signals (news, social, policy, etc.) into per-symbol factor rows and a single fused score, with an optional **market regime** hook (bull / bear / shock) that rescales factor-type weights before fusion.
+<!-- description: OptimetricFlow Signals - An open-source Python toolkit for Multi-Factor Alpha Signal Fusion and Market Regime Detection in quantitative trading. -->
 
-Regime detection uses public index daily bars via [akshare](https://github.com/akfamily/akshare). **Numeric defaults in code are illustrative** (toy tables and a single placeholder benchmark for weighted regime). They are not production IC/decay-tuned values. Treat the published API as **schema + algorithm shape**; bring your own weights and index basket.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![OptimetricFlow](https://img.shields.io/badge/Official-OptimetricFlow-blueviolet)](https://optimetricflow.cn)
 
-## Scope
+**OptimetricFlow Signals** is a high-performance Python library designed for quantitative traders and financial data scientists. It provides a robust framework for transforming structured multi-source signals (news, social media, policy, and macro data) into actionable alpha factors and fused scores.
 
-**In this repository**
+![OptimetricFlow Signals Preview](assets/preview.png)
 
-- `UnifiedSignal` / `RelatedStock` schemas
-- `AlphaFactorFactory`: map signals → `AlphaFactor` rows (event / sentiment / flow / technical buckets)
-- `SignalAggregator`: weighted average by factor type, with regime-dependent multipliers
-- `RegimeDetector`: MA slope + volatility + volume ratio on major CN indices
+## 🌟 Key Features
 
-**Not included** (handled in the OptimetricFlow product, not shipped here)
+- **Multi-Source Signal Fusion**: Convert diverse data streams into a unified per-symbol factor row.
+- **Adaptive Market Regime Detection**: Real-time detection of market states (Bull, Bear, Shock) using MA slope, volatility, and volume analysis via [akshare](https://github.com/akfamily/akshare).
+- **Regime-Conditioned Weighting**: Dynamically rescale factor weights based on the current market environment to optimize signal robustness.
+- **Extensible Alpha Factory**: Modular architecture for mapping raw signals to event, sentiment, flow, and technical buckets.
+- **Schema-First Design**: Clearly defined `UnifiedSignal` and `RelatedStock` schemas for seamless integration into production pipelines.
 
-- Factor decay, rolling IC, or automatic weight updates from realized performance
-- Live data collectors, alerting, or dashboard
-- LLM prompt chains / parsers for raw text → `UnifiedSignal`
-- Execution, portfolio construction, or brokerage integration
+---
 
-This split is intentional: the OSS layer is a **contract and a reference fusion flow** for SEO and integrations; it does not bundle proprietary alpha or operational pipelines.
+## 🏛️ Architecture & Scope
 
-### Parameters (what to override in production)
+This repository serves as the **open-source core** and **integration reference** for the OptimetricFlow ecosystem.
 
-| Area | In this repo | In a real deployment |
-|------|----------------|----------------------|
-| Base factor-type weights | `ILLUSTRATIVE_BASE_WEIGHTS` in `signal_aggregator.py` | Your calibrated / rolling estimates |
-| Regime multipliers | `ILLUSTRATIVE_REGIME_MULTIPLIERS` | Your regime-conditioned schedule |
-| Weighted regime indices | Default is **one** placeholder benchmark; pass ``indices=[(symbol, market, weight), ...]`` to ``get_current_regime_weighted`` | Your chosen universe and weights |
+### In this Repository
 
-Do not treat shipped literals as a recipe for OptimetricFlow’s internal tuning.
+- ✅ **Schemas**: Data contracts for signals and factors.
+- ✅ **AlphaFactorFactory**: Mapping logic for signal-to-factor conversion.
+- ✅ **SignalAggregator**: Advanced fusion algorithms with regime-dependent multipliers.
+- ✅ **RegimeDetector**: Quantitative analysis on major CN indices.
 
-### Fusion (pseudocode)
+### Handled by [OptimetricFlow Enterprise](https://optimetricflow.cn)
 
-No reliance on specific numbers from this README:
+- ❌ Automated factor decay and rolling IC tuning.
+- ❌ Live data collection and real-time alerting dashboards.
+- ❌ LLM-powered prompt chains for raw text parsing.
+- ❌ Full portfolio construction and brokerage execution.
 
-```
-for each symbol:
-    group factors by factor_type
-    for each factor_type with rows:
-        avg_score = confidence-weighted mean of scores for that type
-    regime_weights = normalize(base_weight[type] * regime_multiplier[regime][type])
-    fused[symbol] = sum(avg_score[type] * regime_weights[type]) / sum(regime_weights used)
-```
+---
 
-Clip to \[-1, 1\], then sort symbols by `|fused|`.
+## 🚀 Quick Start
 
-## Requirements
+### Installation
 
-- Python 3.8+
-- `numpy`, `pandas`, `akshare` (declared in `pyproject.toml`)
-
-## Install
-
-From a clone of this repo (at the repository root):
+Install directly from the source for the latest updates:
 
 ```bash
+# Clone the repository
+git clone https://github.com/optimetricflow/optimetricflow-signals.git
+cd optimetricflow-signals
+
+# Set up environment
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -U pip
 pip install .
 ```
 
-If `pip install .` fails on your machine, you can run the example without installing by setting `PYTHONPATH` to the repo root (see below).
+### Run the Pipeline Example
 
-PyPI package name is `flowsense-quant` if/when published; until then, install from Git or local tree.
-
-## Run the bundled example
-
-The example builds fake structured signals, expands to factors, and fuses under a fixed regime (no network):
+The bundled example demonstrates the complete flow from fake signal generation to fused alpha scores:
 
 ```bash
-# From repository root, after `pip install .`:
 python examples/alpha_signal_pipeline.py
-
-# Or without installing:
-PYTHONPATH=. python examples/alpha_signal_pipeline.py
 ```
 
-You should see step-by-step prints: input signals → per-symbol factors → fused scores sorted by magnitude.
+### Market Regime Detection
 
-## Regime detection (optional, needs network)
-
-`get_current_regime()` uses one public index. `get_current_regime_weighted()` takes an explicit `indices` list; if you omit it, the library uses a **single** demo benchmark (not a statement about which indices you should use in product). Requires outbound network and a working akshare install. If fetch fails, the result explains why in `metadata`.
+Detect the current market environment with a single command:
 
 ```python
 from flowsense_quant import RegimeDetector
 
-d = RegimeDetector()
-# explicit basket (example shape only)
-r = d.get_current_regime_weighted(indices=[("000001", "sh", 0.6), ("399006", "sz", 0.4)])
-print(r.regime, r.metadata)
+detector = RegimeDetector()
+# Analyze a weighted basket of indices (e.g., SSE Composite and ChiNext)
+result = detector.get_current_regime_weighted(
+    indices=[("000001", "sh", 0.6), ("399006", "sz", 0.4)]
+)
+
+print(f"Current Market Regime: {result.regime}")
+print(f"Metadata: {result.metadata}")
 ```
 
-## License
+---
 
-MIT — see [LICENSE](LICENSE).
+## 📊 Parameters & Customization
 
-## Links
+| Component | Default (Illustrative) | Production Usage |
+| :--- | :--- | :--- |
+| **Base Weights** | `ILLUSTRATIVE_BASE_WEIGHTS` | Replace with your calibrated rolling estimates. |
+| **Regime Multipliers** | `ILLUSTRATIVE_REGIME_MULTIPLIERS` | Customize based on your regime-conditioned strategy. |
+| **Index Basket** | Single placeholder benchmark | Pass your custom universe to `get_current_regime_weighted`. |
 
-- [OptimetricFlow](https://optimetricflow.cn)
-- [optimetricflow.com](https://optimetricflow.com) (launching later)
+---
+
+## 🔗 Links & Resources
+
+- **Official Website**: [optimetricflow.cn](https://optimetricflow.cn)
+- **Documentation**: [Quick Start Guide](docs/quick-start.md)
+- **Contact & Support**: [Support Team](mailto:support@optimetricflow.cn)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+Built with ❤️ by the **OptimetricFlow Team**
+
